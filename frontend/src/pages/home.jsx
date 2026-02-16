@@ -26,7 +26,7 @@ function HomeComponent() {
 
                 <div style={{ display: "flex", alignItems: "center" }}>
 
-                    <h2>Apna Video Call</h2>
+                    <h2>PeerMeet</h2>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center" }}>
@@ -41,7 +41,7 @@ function HomeComponent() {
 
                     <Button onClick={() => {
                         localStorage.removeItem("token")
-                        navigate("/auth")
+                        navigate("/")
                     }}>
                         Logout
                     </Button>

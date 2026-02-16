@@ -35,27 +35,40 @@ const login = async (req, res) => {
     }
 };
 
-const register=async(req,res)=>{
-    const{name,username,password}=req.body;
+const register = async (req, res) => {
+    const { name, username, password } = req.body;
 
-    try{
-        const existingUser=await User.findOne({username});
-        if(existingUser){
-            return res.status(httpStatus.Found).json({message:"user already exist"});
+    if (!name || !username || !password) {
+        return res.status(400).json({ message: "All fields required" });
+    }
+
+    try {
+        const existingUser = await User.findOne({ username });
+
+        if (existingUser) {
+            return res.status(409).json({ message: "User already exists" });
         }
-        const hashedPassword=await bcrypt.hash(password,10);
-        const newUser=new User({
-            name:name,
-            username:username,
-            password:hashedPassword
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            name,
+            username,
+            password: hashedPassword
         });
+
         await newUser.save();
-        res.status(httpStatus.CREATED).json({message:"User Registered"})
+
+        return res.status(201).json({ message: "User registered successfully" });
+
+    } catch (e) {
+        return res.status(500).json({
+            message: "Server error",
+            error: e.message
+        });
     }
-    catch(e){
-             res.json({message:`Something went wrong ${e}`})
-    }
-}
+};
+
 
 const addToHistory = async (req, res) => {
     try {

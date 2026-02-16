@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from "react-router-dom";
+
 import io from "socket.io-client";
 import { Badge, IconButton, TextField } from '@mui/material';
 import { Button } from '@mui/material';
@@ -57,6 +59,7 @@ export default function VideoMeetComponent() {
     const videoRef = useRef([])
 
     let [videos, setVideos] = useState([])
+const navigate = useNavigate();
 
     // TODO
     // if(isChrome() === false) {
@@ -64,11 +67,10 @@ export default function VideoMeetComponent() {
 
     // }
 
-    useEffect(() => {
-        console.log("HELLO")
-        getPermissions();
+   useEffect(() => {
+    getPermissions();
+}, []);
 
-    })
 
     let getDislayMedia = () => {
         if (screen) {
@@ -401,12 +403,32 @@ export default function VideoMeetComponent() {
     }
 
     let handleEndCall = () => {
-        try {
-            let tracks = localVideoref.current.srcObject.getTracks()
-            tracks.forEach(track => track.stop())
-        } catch (e) { }
-        window.location.href = "/"
+    try {
+        // Stop local tracks
+        if (localVideoref.current?.srcObject) {
+            localVideoref.current.srcObject.getTracks().forEach(track => track.stop());
+        }
+
+        // Close all peer connections
+        for (let id in connections) {
+            connections[id].close();
+        }
+
+        // Clear connections object
+        connections = {};
+
+        // Disconnect socket
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+
+    } catch (e) {
+        console.log(e);
     }
+
+    // Redirect to home page
+    navigate("/home");
+};
 
     let openChat = () => {
         setModal(true);
@@ -468,35 +490,60 @@ export default function VideoMeetComponent() {
 
                 <div className={styles.meetVideoContainer}>
 
-                    {showModal ? <div className={styles.chatRoom}>
+               {showModal ? (
+    <div className={styles.chatRoom}>
+        <div className={styles.chatContainer}>
 
-                        <div className={styles.chatContainer}>
-                            <h1>Chat</h1>
+            <h3>Chat</h3>
 
-                            <div className={styles.chattingDisplay}>
+            {/* Message Display */}
+            <div className={styles.chattingDisplay}>
+                {messages.length !== 0 ? messages.map((item, index) => {
 
-                                {messages.length !== 0 ? messages.map((item, index) => {
+                    const isOwnMessage = item.sender === username;
 
-                                    console.log(messages)
-                                    return (
-                                        <div style={{ marginBottom: "20px" }} key={index}>
-                                            <p style={{ fontWeight: "bold" }}>{item.sender}</p>
-                                            <p>{item.data}</p>
-                                        </div>
-                                    )
-                                }) : <p>No Messages Yet</p>}
+                    return (
+                        <div
+                            key={index}
+                            className={isOwnMessage ? styles.myMessage : styles.otherMessage}
+                        >
+                            {!isOwnMessage && (
+                                <p className={styles.senderName}>{item.sender}</p>
+                            )}
 
-
+                            <div className={styles.messageBubble}>
+                                {item.data}
                             </div>
-
-                            <div className={styles.chattingArea}>
-                                <TextField value={message} onChange={(e) => setMessage(e.target.value)} id="outlined-basic" label="Enter Your chat" variant="outlined" />
-                                <Button variant='contained' onClick={sendMessage}>Send</Button>
-                            </div>
-
-
                         </div>
-                    </div> : <></>}
+                    )
+                }) : <p>No Messages Yet</p>}
+            </div>
+
+            {/* Input + Send Button */}
+            <div className={styles.chattingArea}>
+                <TextField
+                    fullWidth
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    label="Enter your message"
+                    variant="outlined"
+                />
+                <Button
+                    variant="contained"
+                    onClick={sendMessage}
+                >
+                    Send
+                </Button>
+            </div>
+
+        </div>
+    </div>
+) : null}
+
+
+
+                      
+                 
 
 
                     <div className={styles.buttonContainers}>
